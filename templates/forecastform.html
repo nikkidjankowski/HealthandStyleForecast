@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>enter an address for forecast</h1>
+    <form action="/forecast">
+        <input type="text" name="address" placeholder="ENTER ADDRESS">
+        <button>go to current forecast</button>
+    </form>
+    <form action="/30dayforecast">
+        <input type="text" name="address" placeholder="ENTER ADDRESS">
+        <button>go to 30 day</button>
+    </form>
+{% endblock %}

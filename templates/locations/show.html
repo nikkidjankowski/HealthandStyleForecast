@@ -1,0 +1,23 @@
+{% extends 'home.html' %}
+{% block content %}
+
+    <h1>{{ location.address }}</h1>
+    <h2>The hourly forecast for {{ date }}</h2>
+    
+    {% for hour in hourdata %}
+        <ul> <h3>{{ hour.get('datetime') }}</h3>
+        {% for element in hour %}
+        <li>
+            <b>{{ element }} : {{ hour.get(element) }}</b></li>
+        {% endfor %}
+        </ul>
+    {% endfor %}
+    <div>
+    
+        <p>
+            <ul>
+          
+            </ul>
+        </p>
+    </div>
+{% endblock %}

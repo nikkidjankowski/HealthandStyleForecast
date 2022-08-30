@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Style and Forecast</title>
+
+    <link rel="stylesheet"
+        href="https://unpkg.com/bootstrap/dist/css/bootstrap.css">
+    <script src="https://unpkg.com/jquery"></script>
+    <script src="https://unpkg.com/popper"></script>
+    <script src="https://unpkg.com/bootstrap"></script>
+
+    <link rel="stylesheet"
+        href="https://use.fontawesome.com/releases/v5.3.1/css/all.css">
+    <link rel="stylesheet" href="/static/stylesheets/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <a href="/" class="navbar-brand">
+            </a>
+          </div>
+          <ul class="nav navbar-nav navbar-right">
+            {% if request.endpoint != None %}
+            <li>
+            </li>
+            {% endif %}
+            {% if not g.user %}
+            <li><a href="/signup">Sign up</a></li>
+            <li><a href="/login">Log in</a></li>
+            {% else %}
+            <li>
+              <a href="/users/{{ g.user.id }}">
+               
+              </a>
+            </li>
+            <li><a href="/messages/new">New Message</a></li>
+            <li><a href="/logout">Log out</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </nav>
+    <div>
+        {% block content %}
+        {% endblock %}
+    </div>
+    
+</body>
+</html>
