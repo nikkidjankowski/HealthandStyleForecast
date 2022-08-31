@@ -23,6 +23,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
 answerss = []
+FAV_KEY = "fav"
 dieases = ["asthma and allergies","headaches","diabetes","arthritis","heart problems"]
 connect_db(app)
 db.create_all()
@@ -45,6 +46,7 @@ def add_user_to_g():
 
 def do_login(user):
     session[CURR_USER_KEY] = user.username
+
 
 @app.route('/signup', methods=["GET", "POST"])
 def signup():
@@ -99,7 +101,13 @@ def show_forecast_form():
         locations = (Locations
                     .query
                     .all())
+                   
+    #fav = session[FAV_KEY]
+    #for pl in fav:
+        #favoriteplace = Locations.query.get_or_404(pl)
    
+
+    
     return render_template("home.html", user=user, locations=locations)
 
 @app.route('/forecast')
@@ -133,13 +141,13 @@ def profile():
                     .query
                     .all())
     #print(session["responses"])
-    arr = session["responses"]
-    print(arr)
-    dicc = dict(zip(dieases, arr))
-    print(dicc)
+        #arr = session["responses"]
+
+        #dicc = dict(zip(dieases, arr))
 
 
-    return render_template("users/profile.html", dicc=dicc, answerss=answerss, user=user, locations=locations, survey=survey)
+
+    return render_template("users/profile.html", answerss=answerss, user=user, locations=locations, survey=survey)
 
 @app.route('/addlocation', methods=["GET", "POST"])
 def location():
@@ -166,24 +174,29 @@ def messages_show(locations_id):
                 params={'key': key})
 
     y = x.json()
-    print(location.address)
+   
     liststuff = y.get('days')
-   # hi = day.get('hours')
+    address = location.address
     info = []
+    testfunc = Forecasts.getforecast(address)
+    current = Forecasts.getConditions(address)
+    
+    #print(testfunc)
+    
+    db.session.commit()
 
     for data in liststuff:
          
         for deets in data:
             
             if deets == "hours":
-                print(type(deets))
+            
                 hourdata = data.get(deets)
             elif deets == "datetime":
                 date = data.get(deets)
-            #print(deets) #name
-            #print(hour.get(deets)) #value
+      
     
-
+#,severerisk,conditions,icon
     #print(info)
     return render_template('locations/show.html', date=date, hourdata=hourdata, y=y, user=user, location=location, liststuff=liststuff)
 
@@ -232,7 +245,7 @@ def show_question(qid):
         
         for i in responses:
             answerss.append(i)
-        print(answerss)
+       
         return redirect("/profile")
     if(len(responses) != qid):
         flash(f"Invalid question id: {qid}.")
@@ -255,3 +268,16 @@ def answers():
 def finished():
     
     return render_template("done.html", survey=survey, responses=responses)
+
+@app.route("/<int:id>", methods=["POST"])
+def favs(id):
+    session[FAV_KEY] = []
+    fav = session[FAV_KEY]
+    fav.append(id)
+    #like = request.args['id']
+    lo = Locations.query.get_or_404(id)
+    
+    
+    return redirect("/home")
+ 
+    

@@ -45,11 +45,24 @@
     {% if g.user %}
     <h1>HOME</h1>
     <p>welcome back <b>{{user.first_name}} {{user.last_name}}</b></p>
+    <ul>
     {% for i in locations %}
         <li>
         <a href="/locations/{{ i.id }}">{{ i.address }}</a>
-        </li>
+          <form method="POST" action="/{{ i.id }}">
+            <button class="
+              btn 
+              btn-sm 
+              {{'btn-primary' if i.id in fav else 'btn-secondary'}}"
+            >
+              <i class="fa fa-thumbs-up"></i> 
+            </button>
+          </form>
+      </li>
+      
     {% endfor %}
+      </ul>
+      
     {% endif %}
     {% endblock %}
 </body>

@@ -29,3 +29,6 @@ class HealthForm(FlaskForm):
     name = StringField('name', validators=[DataRequired()])
     description = StringField('description', validators=[DataRequired()])
     haveit = BooleanField("Do you have this issue?")
+
+
+#'btn-primary' if msg.id in likes else 

@@ -1,5 +1,5 @@
 from app import app
-from models import HealthIssues, db, connect_db
+from models import HealthIssues, Users, db, connect_db
 
 
 db.drop_all()
@@ -32,6 +32,14 @@ h2 = HealthIssues(
     weathereffects="if lower than 1013mb",
 )
 
-db.session.add_all([h1,h2,h3,h4,h5])
+u1 = Users(
+    username ="nikkij",
+    password ="Secret98",
+    email = "nikkij@mail.com",
+    first_name = "Nikki",
+    last_name = "Jankowski",
+)
+
+db.session.add_all([h1,h2,h3,h4,h5,u1])
 db.session.commit()
 #'btn-secondary' 
