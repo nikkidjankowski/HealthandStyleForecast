@@ -1,9 +1,11 @@
 {% extends 'home.html' %}
 {% block content %}
+<div class="move">
 <h1>Profile</h1>
+<h2 class="test">Hello {{ user.first_name }} {{ user.last_name }}!</h2>
 <p>
     <form action="/addlocation">
-        <button>Add new address </button>
+        <button class="test">Add new address </button>
     </form>
  
         {% for i in locations %}
@@ -12,28 +14,24 @@
         </li>
         {% endfor %}
 </p>
-{% if dicc %}
-    {% for i in dicc %}
-      {% if dicc.get(i) == "Yes" %}
-       <p>{{ i }} {{ dicc.get(i) }}</p>
-      {% endif %}
+<p class="move">
+    {% if health != 0 %}
+    <h3 class="test">Health Issues Listed Below</h3>
+    {% for i in health %}
+        <li><b>{{ i.name }}</b></li>
     {% endfor %}
-{% endif %}
-
-{% if dicc == 0 %}
-<h1>{{ survey.title }}</h1>
-<p>
-    {{ survey.instructions }}
+    {% endif %}
 </p>
-
-<form action="/start" method="POST">
-    <button class="
-                  btn 
-                  btn-sm 
-                  {{'btn-secondary'}}"
-                >
-                  <i class="fa fa-thumbs-up"></i> 
-</form>
+<p>
+   
+{% if usersizehealth == 0 %}
+    <h1>{{ survey.title }}</h1>
+        {{ survey.instructions }}
+        <form action="/start" method="POST">
+            <button>Start</button>
+        </form>
 {% endif %}
+</p>
+</div>
 {% endblock %}
 

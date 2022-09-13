@@ -1,5 +1,28 @@
 /* ====================== General */
-
+table, th, td {
+  border: 1px solid black;
+}
+.test {
+  color:navy
+}
+.profback {
+  background-color: paleturquoise;
+}
+.move {
+  margin-left: 40px;
+}
+.white {
+  color: white;
+}
+.bord {
+  border: 1px solid black;
+}
+.right {
+  position: relative;
+  top: -35px;
+  right: -706px;
+  border: 1px solid black;
+}
 body {
     background-color: #e6ecf0;
   }

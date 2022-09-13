@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g, 
 from sqlalchemy.exc import IntegrityError
 from survey import health_survey as survey
 import requests
-from models import Users, HealthIssues, Forecasts, Outfits, Locations, db, connect_db
+from models import Users, HealthIssues, Forecasts, Outfits, Locations, UsersHealth, db, connect_db
 from forms import UserAddForm, LoginForm, LocationForm, HealthForm
 
 CURR_USER_KEY = "curr_user"
@@ -48,6 +48,14 @@ def do_login(user):
     session[CURR_USER_KEY] = user.username
 
 
+def do_logout():
+    """Logout user."""
+
+    if CURR_USER_KEY in session:
+        del session[CURR_USER_KEY]
+    if RESPONSES_KEY in session:
+        del session[RESPONSES_KEY]
+        
 @app.route('/signup', methods=["GET", "POST"])
 def signup():
     form = UserAddForm()
@@ -67,7 +75,7 @@ def signup():
 
         do_login(user)
 
-        return redirect("/home")
+        return redirect("/profile")
 
     else:
         return render_template('users/signup.html', form=form)
@@ -88,6 +96,14 @@ def login():
     
     return render_template('users/login.html', form=form)
 
+@app.route('/logout')
+def logout():
+    """Handle logout of user."""
+    do_logout()
+    flash("goodbye")
+
+    return redirect("/login")
+
 @app.route('/')
 def home():
     
@@ -100,15 +116,61 @@ def show_forecast_form():
         user = g.user
         locations = (Locations
                     .query
+                    .filter(Locations.username == user.username)
                     .all())
-                   
-    #fav = session[FAV_KEY]
-    #for pl in fav:
-        #favoriteplace = Locations.query.get_or_404(pl)
-   
+        currents = []
+        for i in locations:
+            current = Forecasts.getConditions(i.address)
+            currents.append(current)
+        u = db.session.query(UsersHealth.healthissues_id,UsersHealth.issue).filter(UsersHealth.username == user.username).all()
+        #x = UsersHealth.warning(session["responses"],user.username)
+       
 
+     
+        dieases = []
+        for i in u:
+            test = dict(i)
+
+            new = {
+                    test.get('healthissues_id') : test.get('issue')
+                }
+            dieases.append(new)
     
-    return render_template("home.html", user=user, locations=locations)
+     
+        #currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])           
+        count = 0
+        currenthealth = []
+        outfits = []
+        if len(currents) == 1:
+            currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])
+            clothes = Outfits.whattowear(user.username, currents[0])
+        elif len(currents) > 1:
+            while count <= (len(currents)-1):
+                currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[count])
+                s = Outfits.whattowear(user.username, currents[count])
+                currenthealth.append(currentconditionshealth)
+                outfits.append(s)
+                count = count + 1
+
+        
+        for i in currenthealth:
+            if len(i) == 1:
+                currenthealth.remove(i)
+           
+
+        print(outfits)
+        
+
+
+
+        #for i in currents:
+         #   x = UsersHealth.warning(user.username, dieases, currents[i])
+          #  print(x)
+
+        firstlocation = currents[0].get('address')
+        #clothes = Outfits.whattowear(user.username, currents[0])
+        
+    return render_template("home.html", outfits=outfits, currenthealth=currenthealth, firstlocation=firstlocation, currentconditionshealth=currentconditionshealth, currents=currents, user=user, locations=locations)
 
 @app.route('/forecast')
 def get_forecast():
@@ -135,19 +197,35 @@ def get_30dayforecast():
 
 @app.route('/profile')
 def profile():
+  
     if g.user:
         user = g.user
         locations = (Locations
                     .query
+                    .filter(Locations.username == user.username)
                     .all())
-    #print(session["responses"])
-        #arr = session["responses"]
+        issues = (UsersHealth
+                        .query
+                        .filter(UsersHealth.username == user.username)
+                        .all())
 
-        #dicc = dict(zip(dieases, arr))
+        health = (HealthIssues
+                        .query
+                        .filter(HealthIssues.id == UsersHealth.healthissues_id, UsersHealth.username == user.username)
+                        .all())
+     
+        usersizehealth = len(issues)
+        
+    
+      
+           
+       # y = UsersHealth.warning(user.username, dieases)
 
 
+  
 
-    return render_template("users/profile.html", answerss=answerss, user=user, locations=locations, survey=survey)
+
+    return render_template("users/profile.html", health=health, usersizehealth=usersizehealth, issues=issues, user=user, locations=locations, survey=survey)
 
 @app.route('/addlocation', methods=["GET", "POST"])
 def location():
@@ -163,8 +241,7 @@ def location():
     
     return render_template("locations/new.html", user=user, form=form)
 
-#@app.route('/addresslist')
-#def list():
+
 @app.route('/locations/<int:locations_id>', methods=["GET"])
 def messages_show(locations_id):
     """Show a message."""
@@ -179,12 +256,9 @@ def messages_show(locations_id):
     address = location.address
     info = []
     testfunc = Forecasts.getforecast(address)
+    #db.session.commit()
     current = Forecasts.getConditions(address)
-    
-    #print(testfunc)
-    
-    db.session.commit()
-
+  
     for data in liststuff:
          
         for deets in data:
@@ -195,9 +269,7 @@ def messages_show(locations_id):
             elif deets == "datetime":
                 date = data.get(deets)
       
-    
-#,severerisk,conditions,icon
-    #print(info)
+
     return render_template('locations/show.html', date=date, hourdata=hourdata, y=y, user=user, location=location, liststuff=liststuff)
 
 
@@ -229,29 +301,28 @@ def addhealth():
 def survey_todo():
     
     session[RESPONSES_KEY] = []
+    
     return redirect("/questions/0")
 
 
 
 @app.route("/questions/<int:qid>")
 def show_question(qid):
-    
+    user = g.user
     responses = session.get(RESPONSES_KEY)
 
     if (responses is None):
         # trying to access question page too soon
         return redirect("/")
     if(len(responses) == len(survey.questions)):
-        
-        for i in responses:
-            answerss.append(i)
-       
+        x = UsersHealth.userhealth(session["responses"],user.username)
+        db.session.commit()
         return redirect("/profile")
     if(len(responses) != qid):
         flash(f"Invalid question id: {qid}.")
         return redirect(f"/questions/{len(responses)}")
     question = survey.questions[qid]
-    return render_template("question.html", q_num=qid, question=question, survey=survey, responses=responses)
+    return render_template("question.html", q_num=qid, question=question, survey=survey)
 
    
 @app.route("/answer", methods=["POST"])
@@ -267,17 +338,137 @@ def answers():
 @app.route("/done")
 def finished():
     
-    return render_template("done.html", survey=survey, responses=responses)
+    return render_template("done.html", survey=survey)
 
 @app.route("/<int:id>", methods=["POST"])
 def favs(id):
-    session[FAV_KEY] = []
-    fav = session[FAV_KEY]
-    fav.append(id)
-    #like = request.args['id']
-    lo = Locations.query.get_or_404(id)
-    
+    if g.user:
+        user = g.user
+        lo = Locations.query.get_or_404(id)
+        
+        
+
     
     return redirect("/home")
  
+@app.route('/whattowear')
+def whattowear():
+    if g.user:
+        user = g.user
+        locations = (Locations
+                    .query
+                    .filter(Locations.username == user.username)
+                    .all())
+        currents = []
+        for i in locations:
+            current = Forecasts.getConditions(i.address)
+            currents.append(current)
+        u = db.session.query(UsersHealth.healthissues_id,UsersHealth.issue).filter(UsersHealth.username == user.username).all()
+        #x = UsersHealth.warning(session["responses"],user.username)
+       
+
+     
+        dieases = []
+        for i in u:
+            test = dict(i)
+
+            new = {
+                    test.get('healthissues_id') : test.get('issue')
+                }
+            dieases.append(new)
     
+     
+        #currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])           
+        count = 0
+        currenthealth = []
+        outfits = []
+        if len(currents) == 1:
+            currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])
+            clothes = Outfits.whattowear(user.username, currents[0])
+            return render_template("whattowear.html", user=user, outfits=outfits, clothes=clothes)
+        elif len(currents) > 1:
+            while count <= (len(currents)-1):
+                currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[count])
+                s = Outfits.whattowear(user.username, currents[count])
+                currenthealth.append(currentconditionshealth)
+                outfits.append(s)
+                count = count + 1
+
+      
+        for i in currenthealth:
+            if len(i) == 1:
+                currenthealth.remove(i)
+           
+
+      
+      
+
+
+
+
+        #for i in currents:
+         #   x = UsersHealth.warning(user.username, dieases, currents[i])
+          #  print(x)
+
+        firstlocation = currents[0].get('address')
+        return render_template("whattowear.html", user=user, outfits=outfits)
+
+@app.route('/healthissues')
+def healthissues():
+    if g.user:
+        user = g.user
+        locations = (Locations
+                    .query
+                    .filter(Locations.username == user.username)
+                    .all())
+        currents = []
+        for i in locations:
+            current = Forecasts.getConditions(i.address)
+            currents.append(current)
+        u = db.session.query(UsersHealth.healthissues_id,UsersHealth.issue).filter(UsersHealth.username == user.username).all()
+        #x = UsersHealth.warning(session["responses"],user.username)
+       
+
+     
+        dieases = []
+        for i in u:
+            test = dict(i)
+
+            new = {
+                    test.get('healthissues_id') : test.get('issue')
+                }
+            dieases.append(new)
+    
+     
+        #currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])           
+        count = 0
+        currenthealth = []
+        outfits = []
+        if len(currents) == 1:
+            currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])
+            clothes = Outfits.whattowear(user.username, currents[0])
+        elif len(currents) > 1:
+            while count <= (len(currents)-1):
+                currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[count])
+                s = Outfits.whattowear(user.username, currents[count])
+                currenthealth.append(currentconditionshealth)
+                outfits.append(s)
+                count = count + 1
+
+        
+        for i in currenthealth:
+            if len(i) == 1:
+                currenthealth.remove(i)
+           
+
+      
+        
+
+
+
+        #for i in currents:
+         #   x = UsersHealth.warning(user.username, dieases, currents[i])
+          #  print(x)
+
+        firstlocation = currents[0].get('address')
+        return render_template("issues.html", user=user, currenthealth=currenthealth)

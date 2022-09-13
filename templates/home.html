@@ -16,7 +16,7 @@
         href="https://use.fontawesome.com/releases/v5.3.1/css/all.css">
     <link rel="stylesheet" href="/static/stylesheets/style.css">
 </head>
-<body>
+<body class="profback">
     <nav class="navbar navbar-expand">
         <div class="container-fluid">
           <div class="navbar-header">
@@ -34,6 +34,8 @@
             <li>
                 <a href="/profile">Profile</a>
             </li>
+            <li><a href="/whattowear">What to Wear</a></li>
+            <li><a href="/healthissues">Health Issues</a></li>
             <li><a href="/logout">Log out</a></li>
             {% endif %}
           </ul>
@@ -43,26 +45,68 @@
 
     {% block content %}
     {% if g.user %}
-    <h1>HOME</h1>
-    <p>welcome back <b>{{user.first_name}} {{user.last_name}}</b></p>
-    <ul>
-    {% for i in locations %}
-        <li>
-        <a href="/locations/{{ i.id }}">{{ i.address }}</a>
-          <form method="POST" action="/{{ i.id }}">
-            <button class="
-              btn 
-              btn-sm 
-              {{'btn-primary' if i.id in fav else 'btn-secondary'}}"
-            >
-              <i class="fa fa-thumbs-up"></i> 
-            </button>
-          </form>
-      </li>
-      
-    {% endfor %}
+    <h1 class="test"><b>HOME</b></h1> 
+    <h2>Welcome Back <b class="test">{{user.first_name}} {{user.last_name}}!</b></h2>
+    <div class="right">
+      <b>Saved Locations Below:</b>
+      <ul> 
+        {% for i in locations %}
+        <li> 
+          <a href="/locations/{{ i.id }}">{{ i.address }}</a>
+        </li>
+        {% endfor %}
+   
       </ul>
-      
+    </div>
+    {% if currenthealth %}
+    <h3 class="test">Alerts listed below for your health in your saved locations</h3>
+    {% for i in currenthealth %}
+    <table class="move">
+      <th class="test">What to look out for in {{ i[0] }}</th>
+      <tr>
+      <td>{{ i[1] }} {{ i[2] }}</td>
+      </tr>
+    </table>
+    {% endfor %}
+    {% endif %}
+    {% if outfits %}
+    <h3 class="test">What to wear today!</h3>
+    <table class="move">
+    {% for i in outfits %}
+      <th class="test">Outfit suggestion for {{ i[3] }}</th>
+      <tr>
+      <td>{{ i[0] }}</td>
+      </tr>
+      <tr>
+      <td>{{ i[1] }}</td>
+      </tr>
+      <tr>
+      <td>{{ i[2] }}</td>
+      </tr>
+    {% endfor %}
+    </table>
+    {% endif %}
+        <div class="move">
+          <p>
+            {% if currents != 0 %}
+            <h3 class="test">Current Conditions in saved locations</h3>
+                {% for i in currents %}
+              <p>
+                <table>
+                  {% for x in i %}
+                    {% if x == 'address' %}
+                        <th class="test">Current Conditions in {{ i.get(x) }}<th>
+                    {% else %}
+                      <tr><td><b>{{ x }}</b> : {{ i.get(x) }}</td></tr>
+                    
+                    {% endif %}
+                {% endfor %}
+              </table>
+            </p>
+                {% endfor %}
+              {% endif %}
+          </p>
+        </div>
     {% endif %}
     {% endblock %}
 </body>

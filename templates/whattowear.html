@@ -1,0 +1,37 @@
+{% extends 'home.html' %}
+{% block content %}
+{% if clothes %}
+<h1 class="test">What to wear today!</h1>
+<table class="move">
+
+  <th class="test">Outfit Suggestion to Wear in {{ clothes[3] }}</th>
+  <tr>
+  <td>{{ clothes[0] }}</td>
+  </tr>
+  <tr>
+    <td>{{ clothes[1] }}</td>
+    </tr>
+    <tr>
+        <td>{{ clothes[2] }}</td>
+        </tr>
+</table>
+{% endif %}
+{% if outfits %}
+<h1 class="test">What to wear today!</h1>
+    <table class="move">
+    {% for i in outfits %}
+      <th class="test">Outfit suggestion for {{ i[3] }}</th>
+      <tr>
+      <td>{{ i[0] }}</td>
+      </tr>
+      <tr>
+      <td>{{ i[1] }}</td>
+      </tr>
+      <tr>
+      <td>{{ i[2] }}</td>
+      </tr>
+    {% endfor %}
+    </table>
+{% endif %}
+   
+   {% endblock %}

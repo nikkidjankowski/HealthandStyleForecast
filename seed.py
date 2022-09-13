@@ -18,233 +18,125 @@ l1 = Locations(
 )
 
 
+@app.route('/users/<int:user_id>/edit')
+def users_edit(user_id):
+    """Show a form to edit an existing user"""
 
-class Locations(db.Model):
-    """locations model"""
-
-    __tablename__ = "locations"
-
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-    )
-
-    address = db.Column(
-        db.Text,
-        nullable=False,
-    )
-    username = db.Column(
-        db.String,
-        db.ForeignKey('users.username', ondelete='CASCADE'),
-        nullable=False,
-    )
-    #users = db.relationship('Users')
+    user = User.query.get_or_404(user_id)
+    return render_template('users/edit.html', user=user)
 
 
-class Forecasts(db.Model):
-    """forecasts model"""
+@app.route('/users/<int:user_id>/edit', methods=["POST"])
+def users_update(user_id):
+    """Handle form submission for updating an existing user"""
 
-    __tablename__ = "forecasts"
+    user = User.query.get_or_404(user_id)
+    user.first_name = request.form['first_name']
+    user.last_name = request.form['last_name']
+    user.image_url = request.form['image_url']
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-    )
+    db.session.add(user)
+    db.session.commit()
+    flash(f"User {user.full_name} edited.")
 
-    datetime = db.Column(
-        db.DateTime,
-        nullable=False,
-    )
+    return redirect("/users")
+@app.route('/tags/<int:tag_id>')
+def tags_show(tag_id):
+    """Show a page with info on a specific tag"""
 
-    tempmax = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    tempmin = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    feelslike = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    humidity = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    precipitation = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    snow = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    pressure = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    visiabilty = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    uvindex = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    conditions = db.Column(
-        db.String(200),
-        nullable=False,
-    )
-    description = db.Column(
-        db.String(200),
-        nullable=False,
-    )
-    location_id = db.Column(
-        db.Integer,
-        db.ForeignKey('locations.id', ondelete='CASCADE'),
-        nullable=False,
-    )
-    locations = db.relationship('Locations')
+    tag = Tag.query.get_or_404(tag_id)
+    return render_template('tags/show.html', tag=tag)
 
 
-@classmethod
-def getforecast(cls, address):
-        """Find user with `username` and `password`.
+@app.route('/tags/<int:tag_id>/edit')
+def tags_edit_form(tag_id):
+    """Show a form to edit an existing tag"""
 
-        This is a class method (call it on the class, not an individual user.)
-        It searches for a user whose password hash matches this password
-        and, if it finds such a user, returns that user object.
-
-        If can't find matching user (or if password is wrong), returns False.
-        """
-        API_BASE_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline"
-
-        key = 'ZX7VPUYV36DXTCEP46UQJ6JD6'
-        req = requests.get(f"{API_BASE_URL}/{address}/today?unitGroup=us&include=hours&elements=datetime,temp,feelslike,humidity,dew,precip,precipprob,snow,snowdepth,preciptype,windgust,windspeed,winddir,pressure,visibility,cloudcover,solarradiation,solarenergy,uvindex,severerisk,conditions,icon",
-                params={'key': key})
+    tag = Tag.query.get_or_404(tag_id)
+    posts = Post.query.all()
+    return render_template('tags/edit.html', tag=tag, posts=posts)
 
 
+@app.route('/tags/<int:tag_id>/edit', methods=["POST"])
+def tags_edit(tag_id):
+    """Handle form submission for updating an existing tag"""
 
-   
-      
+    tag = Tag.query.get_or_404(tag_id)
+    tag.name = request.form['name']
+    post_ids = [int(num) for num in request.form.getlist("posts")]
+    tag.posts = Post.query.filter(Post.id.in_(post_ids)).all()
 
-    tempmax = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    tempmin = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    feelslike = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    humidity = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    precipitation = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    snow = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    pressure = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    visiabilty = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    uvindex = db.Column(
-        db.Float,
-        nullable=False,
-    )
-    conditions = db.Column(
-        db.String(200),
-        nullable=False,
-    )
-    description = db.Column(
-        db.String(200),
-        nullable=False,
-    )
-    location_id = db.Column(
-        db.Integer,
-        db.ForeignKey('locations.id', ondelete='CASCADE'),
-        nullable=False,
-    )
-    locations = db.relationship('Locations')
+    db.session.add(tag)
+    db.session.commit()
+    flash(f"Tag '{tag.name}' edited.")
 
-    @classmethod
-    def getforecast(cls, address):
-        dayarray = []
-        API_BASE_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline"
-
-        key = 'ZX7VPUYV36DXTCEP46UQJ6JD6'
-        req = requests.get(f"{API_BASE_URL}/{address}/today?unitGroup=us&include=hours&elements=datetime,temp,feelslike,humidity,dew,precip,precipprob,snow,snowdepth,preciptype,windgust,windspeed,winddir,pressure,visibility,cloudcover,solarradiation,solarenergy,uvindex",
-                params={'key': key})
-        two = req.json()
-        three = two.get('days')
-        for data in three:
-            for x in data:
-                if x == "hours":
-                    time = data.get(x)
-                    for i in time:
-                        if type(i) is dict:
-                            dayarray.append(i)
-                            for u in i:
-                                print(u)
-        forecast = Forecasts(
-            datetime=datetime,
-            temp=temp,
-            feelslike=feelslike,
-            humidity=humidity,
-            dew=dew,
-            precip=precip,
-            precipprob=precipprob,
-            snow=snow,
-            snowdepth=snowdepth,
-            preciptype=preciptype,
-            windgust=windgust,
-            windspeed=windspeed,
-            winddir=winddir,
-            pressure=pressure,
-            visibility=visibility,
-            cloudcover=cloudcover,
-            solarradiation=solarradiation,
-            solarenergy=solarenergy,
-            uvindex=uvindex,
-        )
+    return redirect("/tags")
 
 
+@app.route('/tags/<int:tag_id>/delete', methods=["POST"])
+def tags_destroy(tag_id):
+    """Handle form submission for deleting an existing tag"""
 
-                                
-        forecast = Forecasts(
-            datetime=datetime,
-            temp=temp,
-            feelslike=feelslike,
-            humidity=humidity,
-            dew=dew,
-            precip=precip,
-            precipprob=precipprob,
-            snow=snow,
-            snowdepth=snowdepth,
-            preciptype=preciptype,
-            windgust=windgust,
-            windspeed=windspeed,
-            winddir=winddir,
-            pressure=pressure,
-            visibility=visibility,
-            cloudcover=cloudcover,
-            solarradiation=solarradiation,
-            solarenergy=solarenergy,
-            uvindex=uvindex,
-        )
-  
+    tag = Tag.query.get_or_404(tag_id)
+    db.session.delete(tag)
+    db.session.commit()
+    flash(f"Tag '{tag.name}' deleted.")
 
-        db.session.add(user)
+    return redirect("/tags")
+
+{% extends 'base.html' %}
+
+{% block title %}Edit Post{% endblock %}
+
+{% block content %}
+
+<h1>Edit Post</h1>
+
+<form method="POST" action="/posts/{{ post.id }}/edit">
+
+  <div class="form-group row">
+    <label for="title" class="col-sm-2 col-form-label">Title</label>
+    <div class="col-sm-10">
+      <input class="form-control" id="title" name="title" value="{{ post.title }}">
+    </div>
+  </div>
+
+  <div class="form-group row">
+    <label for="content" class="col-sm-2 col-form-label">Post Content</label>
+    <div class="col-sm-10">
+      <textarea class="form-control"
+                id="content"
+                name="content">{{ post.content }}</textarea>
+    </div>
+  </div>
+
+  <div class="form-check">
+    {% for tag in tags %}
+    <div>
+      <input class="form-check-input"
+             type="checkbox"
+             value="{{ tag.id }}"
+             id="tag_{{ tag.id }}"
+             {% if tag in post.tags %}checked{% endif %}
+             name="tags">
+      <label class="form-check-label" for="tag_{{ tag.id }}">
+        {{ tag.name }}
+      </label>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="form-group row">
+    <div class="ml-auto mr-3">
+      <a href="/users/{{ post.user_id }}" class="btn btn-outline-info">
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-success">
+        Edit
+      </button>
+    </div>
+  </div>
+
+</form>
+
+{% endblock %}

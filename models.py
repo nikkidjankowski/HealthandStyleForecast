@@ -33,7 +33,7 @@ class Users(db.Model):
     first_name = db.Column(db.String(30), nullable=False)
     last_name = db.Column(db.String(30), nullable=False)
     locations = db.relationship('Locations')
-
+  
     @classmethod
     def signup(cls, username, email, password, first_name, last_name):
         """Sign up user.
@@ -151,10 +151,6 @@ class Forecasts(db.Model):
         db.Float,
         nullable=True,
     )
-    preciptype = db.Column(
-        db.Float,
-        nullable=True,
-    )
     pressure = db.Column(
         db.Float,
         nullable=True,
@@ -234,7 +230,6 @@ class Forecasts(db.Model):
                 precipprob=(x.get('precipprob')),
                 snow=(x.get('snow')),
                 snowdepth=(x.get('snowdepth')),
-                preciptype=(x.get('preciptype')),
                 windgust=(x.get('windgust')),
                 windspeed=(x.get('windspeed')),
                 winddir=(x.get('winddir')),
@@ -246,6 +241,7 @@ class Forecasts(db.Model):
                 uvindex=(x.get('uvindex')),
             )
             test.append(forecast)
+          
             
         #print(forecast)
         db.session.add_all(test)
@@ -261,15 +257,31 @@ class Forecasts(db.Model):
         req = requests.get(f"{API_BASE_URL}/{address}/today?unitGroup=us&iconSet=icons2",
                 params={'key': key})
         two = req.json()
+        #print(dict(two))
         three = two.get('currentConditions')
-        print(three)
+        #print(three)
         for i in two:
             if i == 'currentConditions':
-                print(two.get(i))
-                d 
-        return three
-        
+                
+                info = two.get(i)
+                #print(info)
+                d = dict(info)
+                #print(d.get('preciptype'))
 
+    
+        d = {
+            'address':address,
+            'description':two.get('description'),
+            'temp':d.get('temp'),
+            'feelslike':d.get('feelslike'),
+            'conditions':d.get('conditions'),
+            'uvindex':d.get('uvindex'),
+            'precip':d.get('precip'),
+            'pressure':d.get('pressure'),
+            'preciptype':d.get('preciptype'),
+            'precipprob':d.get('precipprob'),
+        }
+        return d
    
       
 
@@ -294,6 +306,25 @@ class Outfits(db.Model):
         db.Text,
         nullable=False,
     )
+    @classmethod
+    def whattowear(cls, username, conditions):
+        clothes = []
+        
+        
+        if conditions.get('temp') >= 80:
+            u = list(db.session.query(Outfits.top,Outfits.bottom,Outfits.accessories).filter(Outfits.id == 1).first())
+          
+        elif conditions.get('temp') <= 50:
+            u = list(db.session.query(Outfits.top,Outfits.bottom,Outfits.accessories).filter(Outfits.id == 2).first())
+            
+        else:
+            u = list(db.session.query(Outfits.top,Outfits.bottom,Outfits.accessories).filter(Outfits.id == 3).first())
+            
+        u.append(conditions.get('address'))
+        return u
+
+
+       
 
 class  HealthIssues(db.Model):
     """health issues model"""
@@ -316,3 +347,114 @@ class  HealthIssues(db.Model):
         db.Text,
         nullable=False,
     )
+    
+
+class UsersHealth(db.Model):
+    """Mapping user likes to warbles."""
+
+    __tablename__ = 'usershealth' 
+
+
+    username = db.Column(
+        db.String(20),
+        db.ForeignKey('users.username'), primary_key=True
+    )
+
+    healthissues_id = db.Column(
+        db.Integer,
+        db.ForeignKey('healthissues.id'), primary_key=True
+    )
+
+    issue = db.Column(db.Text)
+
+    @classmethod
+    def userhealth(cls, responses, username):
+        
+        
+        newIndex = 0
+        hissues = []
+        name = []
+        for i in responses:
+            newIndex = newIndex + 1
+            if i == 'Yes':
+                #print(newIndex)
+                diease = HealthIssues.query.get(newIndex)
+                name.append(diease.name)
+                issue = UsersHealth(username=username, healthissues_id=diease.id, issue=diease.name)
+                hissues.append(issue)
+    
+        #print(name)
+        db.session.add_all(hissues) 
+        
+        return hissues 
+
+    @classmethod
+    def warning(cls, username, dieases, currentconditions):
+        
+        
+        
+        newIndex = 0
+        hindex = []
+        alerts = []
+        place = currentconditions.get('address')
+        alerts.append(place)
+
+        
+        for i in dieases:
+            for h in i:
+                hindex.append(h)
+
+        for num in hindex:
+            if num == 1:
+                if currentconditions.get('temp') >= 80:
+                    al = 'The current temperature can cause issues for your Asthma and Allergies'
+                    alerts.append(al)
+                if currentconditions.get('precipprob') is not None:
+                    al = 'The current rain could increase issues with your Asthma and Allergies'
+                    alerts.append(al)
+            if num == 2:
+                if currentconditions.get('temp') <= 50: 
+                    al = 'The current temperature can cause your Joint Pain to increase'
+                    alerts.append(al)
+                if currentconditions.get('pressure') < 1013.0:
+                    al = 'The current atmospheric pressure can cause your Joint Pain to increase'
+                    alerts.append(al)
+                if currentconditions.get('precipprob') is not None:
+                    al = 'The current rain could increase issues with your Joint Pain'
+                    alerts.append(al)
+            if num == 3:
+                if currentconditions.get('temp') <= 50: 
+                    al = 'The current temperature can cause your Headaches to increase'
+                    alerts.append(al)
+                if currentconditions.get('pressure') < 1013.0:
+                    al = 'The current atmospheric pressure can cause your Headaches to increase'
+                    alerts.append(al)
+                if currentconditions.get('precipprob') is not None:
+                    al = 'The current rain could increase issues with your Joint Pain'
+                    alerts.append(al)
+            if num == 4:
+                if currentconditions.get('temp') <= 50: 
+                    al = 'The current temperature can cause your heart problems to increase'
+                    alerts.append(al)
+            if num == 5:
+                if currentconditions.get('temp') <= 50: 
+                    al = 'The current temperature can cause your diabetes issues to increase'
+                    alerts.append(al)
+                if currentconditions.get('pressure') < 1013.0:
+                    al = 'The current atmospheric pressure can cause your diabetes issues to increase'
+                    alerts.append(al)
+            
+        
+        return alerts
+    @classmethod
+    def idname(cls, username):
+        em = UsersHealth.query.filter(UsersHealth.username == username).all()
+        y = UsersHealth.query.filter_by(username=username)
+        usersinfo = []
+        x = db.session.query(UsersHealth.healthissues_id, UsersHealth.username).filter(UsersHealth.username == username).all()
+        for i in x:
+            for index in i:
+                if type(index) is int:
+                    usersinfo.append(index)
+
+        return usersinfo

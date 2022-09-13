@@ -35,10 +35,10 @@ health_survey = Survey(
     "Please fill out a survey about your experience with us.",
     [
         Question("Do you suffer from Asthma and allergies?"),
-        Question("Do you suffer from headaches or migraines?"),
-        Question("Do you have any type of diabetes?"),
         Question("Do you suffer from joint pain or arthritis?"),
+        Question("Do you suffer from headaches or migraines?"),
         Question("Do you suffer from heart problems or at risk of a heart attack?"),
+        Question("Do you have any type of diabetes?"),
     ])
 
     
