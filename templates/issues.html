@@ -1,18 +1,15 @@
 {% extends 'home.html' %}
 {% block content %}
 
-    {% if currenthealth %}
-        <h3 class="test">Alerts listed below for your health in your saved locations</h3>
-        {% for i in currenthealth %}
-        <table class="move">
-        <th class="test">What to look out for in {{ i[0] }}</th>
-        <tr>
-        <td>{{ i[1] }} {{ i[2] }}</td>
-        </tr>
-        </table>
-        {% endfor %}
+    
+    {% if dieasesshown %}
+    <h2>{{ dieasesshown }}</h2>
     {% else %}
-        <h2>Your saved locations' daily forecast is safe for your health issues!</h2>
+        {% if currenthealth %}
+        <h2>{{ currenthealth }}</h2>
+            {% else %}
+            <h2>You have no health issues regarding your saved locations</h2>
+            {% endif %}
     {% endif %}
 
 {% endblock %}

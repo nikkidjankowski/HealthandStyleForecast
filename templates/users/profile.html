@@ -9,9 +9,13 @@
     </form>
  
         {% for i in locations %}
-        <li>
+       <div>
         <a href="/locations/{{ i.id }}">{{ i.address }}</a>
-        </li>
+        <form method="POST"
+                    action="/locations/{{ i.id }}/delete">
+        <button>Delete</button>
+        </form>
+        </div>
         {% endfor %}
 </p>
 <p class="move">

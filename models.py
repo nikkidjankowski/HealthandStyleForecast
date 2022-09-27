@@ -244,7 +244,7 @@ class Forecasts(db.Model):
           
             
         #print(forecast)
-        db.session.add_all(test)
+        #db.session.add_all(test)
         #db.session.commit()
 
         #print(test)
@@ -308,20 +308,27 @@ class Outfits(db.Model):
     )
     @classmethod
     def whattowear(cls, username, conditions):
-        clothes = []
+        
         
         
         if conditions.get('temp') >= 80:
             u = list(db.session.query(Outfits.top,Outfits.bottom,Outfits.accessories).filter(Outfits.id == 1).first())
-          
+            u.append(conditions.get('address'))
+           
         elif conditions.get('temp') <= 50:
             u = list(db.session.query(Outfits.top,Outfits.bottom,Outfits.accessories).filter(Outfits.id == 2).first())
+            u.append(conditions.get('address'))
+            
+            
+        elif conditions.get('temp') <= 79 and conditions.get('temp') > 50:
+            u = list(db.session.query(Outfits.top,Outfits.bottom,Outfits.accessories).filter(Outfits.id == 3).first())
+            u.append(conditions.get('address'))
             
         else:
             u = list(db.session.query(Outfits.top,Outfits.bottom,Outfits.accessories).filter(Outfits.id == 3).first())
-            
-        u.append(conditions.get('address'))
+            u.append(conditions.get('address'))
         return u
+       
 
 
        

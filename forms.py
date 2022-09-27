@@ -27,7 +27,7 @@ class LoginForm(FlaskForm):
 
 class LocationForm(FlaskForm):
 
-    address = StringField('address', validators=[DataRequired()])
+    address = StringField('City,State or City,Country', validators=[DataRequired()])
 
 class HealthForm(FlaskForm):
     month  = SelectField(choices=dieases)

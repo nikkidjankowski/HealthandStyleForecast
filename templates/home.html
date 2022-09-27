@@ -58,16 +58,31 @@
    
       </ul>
     </div>
-    {% if currenthealth %}
-    <h3 class="test">Alerts listed below for your health in your saved locations</h3>
+    {% if currenthealth == 0 %}
+      <p>Your health issues are safe in these forecasts</p>
+      {% else %}
     {% for i in currenthealth %}
-    <table class="move">
-      <th class="test">What to look out for in {{ i[0] }}</th>
-      <tr>
-      <td>{{ i[1] }} {{ i[2] }}</td>
-      </tr>
-    </table>
+    <li>{{ i[0] }} : {{ i[1] }}</li>
     {% endfor %}
+      {% endif %}
+      {% if dieasesshown %}
+      <li>{{ dieasesshown }}</li>
+      {% endif %}
+      {% if clothes %}
+    <h3 class="test">What to wear today!</h3>
+    <table class="move">
+    
+      <th class="test">Outfit suggestion for {{ clothes[3] }}</th>
+      <tr>
+      <td>{{ clothes[0] }}</td>
+      </tr>
+      <tr>
+        <td>{{ clothes[1] }}</td>
+        </tr>
+        <tr>
+          <td>{{ clothes[2] }}</td>
+          </tr>
+    </table>
     {% endif %}
     {% if outfits %}
     <h3 class="test">What to wear today!</h3>
@@ -108,6 +123,9 @@
           </p>
         </div>
     {% endif %}
+    {% if currenthealth == 0 %}
+        <p>hiii</p>
+      {% endif %}
     {% endblock %}
 </body>
 </html>

@@ -2,6 +2,7 @@ from email.headerregistry import Address
 from http.client import responses
 import os
 from flask import Flask, render_template, request, flash, redirect, session, g, abort
+from sqlalchemy import null
 #from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from survey import health_survey as survey
@@ -112,88 +113,85 @@ def home():
 
 @app.route('/home')
 def show_forecast_form():
-    if g.user:
-        user = g.user
-        locations = (Locations
+    loco = (Locations
                     .query
-                    .filter(Locations.username == user.username)
+                    .filter(Locations.username == g.user.username)
                     .all())
-        currents = []
-        for i in locations:
-            current = Forecasts.getConditions(i.address)
-            currents.append(current)
-        u = db.session.query(UsersHealth.healthissues_id,UsersHealth.issue).filter(UsersHealth.username == user.username).all()
-        #x = UsersHealth.warning(session["responses"],user.username)
-       
+    if len(loco) == 0:
+        return render_template('homeerror.html')
+    else:
+        if g.user:
+            user = g.user
+            locations = (Locations
+                        .query
+                        .filter(Locations.username == user.username)
+                        .all())
+            currents = []
 
-     
-        dieases = []
-        for i in u:
-            test = dict(i)
-
-            new = {
-                    test.get('healthissues_id') : test.get('issue')
-                }
-            dieases.append(new)
-    
-     
-        #currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])           
-        count = 0
-        currenthealth = []
-        outfits = []
-        if len(currents) == 1:
-            currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])
-            clothes = Outfits.whattowear(user.username, currents[0])
-        elif len(currents) > 1:
-            while count <= (len(currents)-1):
-                currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[count])
-                s = Outfits.whattowear(user.username, currents[count])
-                currenthealth.append(currentconditionshealth)
-                outfits.append(s)
-                count = count + 1
-
-        
-        for i in currenthealth:
-            if len(i) == 1:
-                currenthealth.remove(i)
+            for i in locations:
+                current = Forecasts.getConditions(i.address)
+                currents.append(current)
+            u = db.session.query(UsersHealth.healthissues_id,UsersHealth.issue).filter(UsersHealth.username == user.username).all()
            
 
-        print(outfits)
-        
 
+            firstforecast = currents[0]
+            dieases = []
+         
+            for i in u:
+                test = dict(i)
 
+                new = {
+                        test.get('healthissues_id') : test.get('issue')
+                    }
+                dieases.append(new)
+          
+            count = 0
+            currenthealth = []
+            outfits = []
+       
+            if len(currents) == 1:
+                currentconditionshealth = UsersHealth.warning(user.username, dieases, firstforecast)
+                clothes = Outfits.whattowear(user.username, firstforecast)
+                currenthealth.append(currentconditionshealth)
+                print(len(currenthealth))
+                for i in currenthealth:
+                
+                    if len(i) == 1:
+                        currenthealth.remove(i)
+                if len(currenthealth) == 0:
+                    currenthealth = 0
+                return render_template("home.html", clothes=clothes, currenthealth=currenthealth, currentconditionshealth=currentconditionshealth, currents=currents, user=user, locations=locations)
 
-        #for i in currents:
-         #   x = UsersHealth.warning(user.username, dieases, currents[i])
-          #  print(x)
+            elif len(currents) > 1:
+                while count <= (len(currents)-1):
+                    currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[count])
+                    s = Outfits.whattowear(user.username, currents[count])
+                    
+                    currenthealth.append(currentconditionshealth)
+                    outfits.append(s)
+                    count = count + 1
+                
+                dieasesshown = list()
+                #print(currenthealth, len(currenthealth))
+               # print(currents, type(currents))
+               # print(len(currenthealth), currents)
+                for i in currenthealth:
+                    #print(len(i))
+                    if len(i) > 1:
+                        dieasesshown.append(i) 
+                #print(len(currenthealth))
+                currenthealth = 0
+                print(dieasesshown)
+                return render_template("home.html", dieasesshown=dieasesshown, outfits=outfits, currentconditionshealth=currentconditionshealth, currents=currents, user=user, locations=locations)
 
-        firstlocation = currents[0].get('address')
-        #clothes = Outfits.whattowear(user.username, currents[0])
-        
-    return render_template("home.html", outfits=outfits, currenthealth=currenthealth, firstlocation=firstlocation, currentconditionshealth=currentconditionshealth, currents=currents, user=user, locations=locations)
-
-@app.route('/forecast')
-def get_forecast():
-    address = request.args["address"]
-    x = requests.get(f"{API_BASE_URL}/{address}/today?unitGroup=us",
-                params={'key': key,"include": "current","elements": "conditions","elements": "description","elements": "feelslike"})
-
-    y = x.json()
-  
-
-    return render_template("showforecast.html", y=y, address=address)        
-
-    
-
-
-@app.route('/30dayforecast')
-def get_30dayforecast():
-    address = request.args["address"]
-    x = requests.get(f"{API_BASE_URL}/{address}/next30days?unitGroup=us",
-                params={'key': key,"include": "current","include": "days","elements": "conditions","elements": "datetime","elements": "feelslike"})
-
-    y = x.json()
-    return render_template("30dayforecast.html", y=y, address=address)
+            
+            else:
+                return render_template('homeerror.html')
+            
+            
+            
+          
 
 @app.route('/profile')
 def profile():
@@ -215,17 +213,17 @@ def profile():
                         .all())
      
         usersizehealth = len(issues)
-        
+    
     
       
            
        # y = UsersHealth.warning(user.username, dieases)
 
 
-  
+  #health=health,
 
 
-    return render_template("users/profile.html", health=health, usersizehealth=usersizehealth, issues=issues, user=user, locations=locations, survey=survey)
+        return render_template("users/profile.html",health=health, usersizehealth=usersizehealth, issues=issues, user=user, locations=locations, survey=survey)
 
 @app.route('/addlocation', methods=["GET", "POST"])
 def location():
@@ -273,13 +271,21 @@ def messages_show(locations_id):
     return render_template('locations/show.html', date=date, hourdata=hourdata, y=y, user=user, location=location, liststuff=liststuff)
 
 
-    #https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/SanDiego,CA//today?unitGroup=us&include=current&elements=description,conditions&key=ZX7VPUYV36DXTCEP46UQJ6JD6
+@app.route('/locations/<int:locations_id>/delete', methods=["POST"])
+def location_destroy(locations_id):
+    """Delete a message."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    loc = Locations.query.get_or_404(locations_id)
     
 
+    db.session.delete(loc)
+    db.session.commit()
 
-    #https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/SanDiego,CA/next7days?unitGroup=us&key=ZX7VPUYV36DXTCEP46UQJ6JD6&include=days
-    #https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/SanDiego,CA/today?unitGroup=us&key=ZX7VPUYV36DXTCEP46UQJ6JD6&include=hours
-
+    return redirect("/profile")
 
 @app.route('/addhealth', methods=["GET", "POST"])
 def addhealth():
@@ -340,16 +346,6 @@ def finished():
     
     return render_template("done.html", survey=survey)
 
-@app.route("/<int:id>", methods=["POST"])
-def favs(id):
-    if g.user:
-        user = g.user
-        lo = Locations.query.get_or_404(id)
-        
-        
-
-    
-    return redirect("/home")
  
 @app.route('/whattowear')
 def whattowear():
@@ -400,16 +396,6 @@ def whattowear():
                 currenthealth.remove(i)
            
 
-      
-      
-
-
-
-
-        #for i in currents:
-         #   x = UsersHealth.warning(user.username, dieases, currents[i])
-          #  print(x)
-
         firstlocation = currents[0].get('address')
         return render_template("whattowear.html", user=user, outfits=outfits)
 
@@ -426,7 +412,7 @@ def healthissues():
             current = Forecasts.getConditions(i.address)
             currents.append(current)
         u = db.session.query(UsersHealth.healthissues_id,UsersHealth.issue).filter(UsersHealth.username == user.username).all()
-        #x = UsersHealth.warning(session["responses"],user.username)
+        
        
 
      
@@ -439,14 +425,20 @@ def healthissues():
                 }
             dieases.append(new)
     
-     
-        #currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])           
+             
         count = 0
         currenthealth = []
         outfits = []
         if len(currents) == 1:
             currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[0])
             clothes = Outfits.whattowear(user.username, currents[0])
+            currenthealth.append(currentconditionshealth)
+                
+            for i in currenthealth:
+                
+                if len(i) == 1:
+                    currenthealth.remove(i)
+                return render_template("issues.html", user=user, currenthealth=currenthealth)
         elif len(currents) > 1:
             while count <= (len(currents)-1):
                 currentconditionshealth = UsersHealth.warning(user.username, dieases, currents[count])
@@ -454,21 +446,18 @@ def healthissues():
                 currenthealth.append(currentconditionshealth)
                 outfits.append(s)
                 count = count + 1
+            dieasesshown = list()
+                #print(currenthealth, len(currenthealth))
+               # print(currents, type(currents))
+               # print(len(currenthealth), currents)
+            for i in currenthealth:
+                    #print(len(i))
+                if len(i) > 1:
+                    dieasesshown.append(i)
+                    currenthealth = 0 
 
         
-        for i in currenthealth:
-            if len(i) == 1:
-                currenthealth.remove(i)
            
 
-      
-        
-
-
-
-        #for i in currents:
-         #   x = UsersHealth.warning(user.username, dieases, currents[i])
-          #  print(x)
-
         firstlocation = currents[0].get('address')
-        return render_template("issues.html", user=user, currenthealth=currenthealth)
+        return render_template("issues.html", user=user, dieasesshown=dieasesshown, currenthealth=currenthealth)

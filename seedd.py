@@ -24,7 +24,7 @@ h3 = HealthIssues(
 h4 = HealthIssues(
     name="Heart attack",
     description="Temp drops a few degrees more at risk",
-    weathereffects=5,
+    weathereffects="cold",
 )
 h5 = HealthIssues(
     name="Diabetes",

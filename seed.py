@@ -16,7 +16,15 @@ l1 = Locations(
     address="San Diego, CA",
     username="nikkij",
 )
+ {% for i in currenthealth %}
 
+    <table class="move">
+      <th class="test">Whatt to look out for in {{ i[0] }}</th>
+      <tr>
+      <td>{{ i[1] }} {{ i[2] }}</td>
+      </tr>
+    </table>
+    {% endfor %} 
 
 @app.route('/users/<int:user_id>/edit')
 def users_edit(user_id):
@@ -140,3 +148,22 @@ def tags_destroy(tag_id):
 </form>
 
 {% endblock %}
+
+
+
+
+
+
+
+
+    def setup_likes(self):
+        m1 = Message(text="trending warble", user_id=self.testuser_id)
+        m2 = Message(text="Eating some lunch", user_id=self.testuser_id)
+        m3 = Message(id=9876, text="likable warble", user_id=self.u1_id)
+        db.session.add_all([m1, m2, m3])
+        db.session.commit()
+
+        l1 = Likes(user_id=self.testuser_id, message_id=9876)
+
+        db.session.add(l1)
+        db.session.commit()
