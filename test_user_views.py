@@ -40,7 +40,7 @@ class UserViewsTestCase(TestCase):
      
         
         self.weatherissue = {
-            'address': 'San Diego,CA',
+            'address': 'London,UK',
             'description': 'cold and rainy',
             'temp': 50,
             'pressure': 1000.0,
@@ -48,7 +48,7 @@ class UserViewsTestCase(TestCase):
         } 
         
 
-    def setup_likes(self):
+    def setUp_data(self):
         self.location = Locations(address="San Diego, CA",username=self.testuser.username)
         self.health1 = HealthIssues(
             name="Asthma and allergies",
@@ -94,9 +94,11 @@ class UserViewsTestCase(TestCase):
         self.issue = UsersHealth(username=self.testuser.username,healthissues_id=2,issue="joint pain")
         db.session.add_all([self.issue,self.location,self.health1,self.health2,self.health3,self.health4,self.health5,self.outfit1,self.outfit2,self.outfit3])
         
-
         db.session.commit()
-
+    def setUp_healthdata(self):
+        self.location2 = Locations(address="London,UK",username=self.testuser.username)
+        db.session.add(self.location2)
+        db.session.commit()
     def tearDown(self):
         """Clean up fouled transactions."""
 
@@ -105,7 +107,7 @@ class UserViewsTestCase(TestCase):
         return res
 
     def test_view_profile(self):
-        self.setup_likes()
+        self.setUp_data()
         health = HealthIssues.query.filter(HealthIssues.id==self.issue.healthissues_id).one()
         
         location = Locations.query.filter(Locations.username==self.location.username).one()
@@ -120,12 +122,14 @@ class UserViewsTestCase(TestCase):
             self.assertIn(health.name, str(html))
             self.assertIn(location.address, str(html))
             
-         #   import pdb
-         #   pdb.set_trace()
+            #import pdb
+           # pdb.set_trace()
        # <li><b>{{ i.name }}</b></li>
+       #client.post('/addlocation',data={'address':'London,UK'})
+       #.get("/locations/2")
         
     def test_view_home(self):
-        self.setup_likes()
+        self.setUp_data()
         health = HealthIssues.query.filter(HealthIssues.id==self.issue.healthissues_id).one()
         
         location = Locations.query.filter(Locations.username==self.location.username).one()
@@ -142,11 +146,12 @@ class UserViewsTestCase(TestCase):
     
 
     def test_currentcondition_api(self):
-        self.setup_likes()
+        self.setUp_data()
         location = Locations.query.filter(Locations.username==self.location.username).one()
         currentweather = Forecasts.getConditions(location.address)
         clothes = Outfits.whattowear(self.testuser.username,currentweather)
         warn = HealthIssues.query.filter(HealthIssues.id==self.issue.healthissues_id).one()
+        
         
         dieases = []
             
@@ -155,8 +160,8 @@ class UserViewsTestCase(TestCase):
                 warn.id :warn.name 
             }
         dieases.append(new)
-        
-        print(clothes)
+        currenthealth = UsersHealth.warning(self.testuser.username, dieases, self.weatherissue)
+      
      
         with self.client as c:
             with c.session_transaction() as ses:
@@ -169,13 +174,13 @@ class UserViewsTestCase(TestCase):
             self.assertIn(currentweather["address"],str(html))
             self.assertIn(currentweather["description"],str(html))
             self.assertIn(str(currentweather["temp"]),str(html))
-            self.assertIn("The current atmospheric pressure can cause your Joint Pain to increase", str(html))
+            #self.assertIn("The current atmospheric pressure can cause your Joint Pain to increase", str(html))
             self.assertIn(clothes[1], str(html))
             
             
             
     def test_profile_views(self):
-        self.setup_likes()
+        self.setUp_data()
         location = Locations.query.filter(Locations.username==self.location.username).one()
          
         
@@ -192,5 +197,60 @@ class UserViewsTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             html = resp.data
             self.assertIn(str(location.address),str(html))
-    
 
+    def test_location_views(self):
+        self.setUp_data()
+        with self.client as c:
+            with c.session_transaction() as ses:
+                ses['curr_user'] = "usertest" 
+            res = c.post('/addlocation',data={'address':'London,UK'})
+            html = res.data
+            self.assertEqual(res.status_code, 302)
+            res2 = c.get("/locations/2")
+            self.assertEqual(res2.status_code, 200)
+          
+
+        #res = self.get("/locations/2")
+    def test_health_api_views(self):
+        self.setUp_data()
+        location = Locations.query.filter(Locations.username==self.location.username).one()
+        warn = HealthIssues.query.filter(HealthIssues.id==self.issue.healthissues_id).one()
+        currentweather = Forecasts.getConditions(location.address)
+        
+        dieases = []
+            
+
+        new = {
+                warn.id :warn.name 
+            }
+        dieases.append(new)
+        currenthealth = UsersHealth.warning(self.testuser.username, dieases, currentweather)
+    
+        with self.client as c:
+            with c.session_transaction() as ses:
+                ses['curr_user'] = "usertest"
+            res = c.get('/healthissues')
+            html = res.data
+            if len(currenthealth) == 1:
+                self.assertIn("You have no health issues regarding your saved locations",str(html))
+            else:
+                self.assertIn(currenthealth[1], str(html))
+        
+    def test_healthissue_views(self):
+        self.setUp_data()
+        self.setUp_healthdata()
+        location = Locations.query.filter(Locations.username==self.location.username).all()
+        warn = HealthIssues.query.filter(HealthIssues.id==self.issue.healthissues_id).one()
+        weathercon = self.weatherissue
+        dieases = []
+        new = {
+                warn.id :warn.name 
+            }
+        dieases.append(new)
+        currenthealth = UsersHealth.warning(self.testuser.username, dieases, self.weatherissue)
+   
+        print(location)
+        with self.client as c:
+            with c.session_transaction() as ses:
+                ses['curr_user'] = "usertest"
+           
